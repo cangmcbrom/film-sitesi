@@ -1,14 +1,28 @@
 /* ===================================================
-   İZLEME LİSTEM — Application Logic
+   İZLEME LİSTEM — Application Logic (Firebase Firestore)
    =================================================== */
 
+// ─── Firebase Config & Init ───
+const firebaseConfig = {
+    apiKey: "AIzaSyC8fZVzd5vdT2x1WhtoGp9GvjSGff7zwLQ",
+    authDomain: "izleme-listem.firebaseapp.com",
+    projectId: "izleme-listem",
+    storageBucket: "izleme-listem.firebasestorage.app",
+    messagingSenderId: "375192428294",
+    appId: "1:375192428294:web:91c638f76be4dfefbd8887"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const itemsCollection = db.collection('items');
+
 // ─── State ───
-const STORAGE_KEY = 'izleme-listem-data';
 let items = [];
 let activeCategory = 'all';
 let activeStatus = 'all';
 let searchQuery = '';
 let deleteTargetId = null;
+let isLoading = true;
 
 // ─── DOM References ───
 const cardsGrid = document.getElementById('cardsGrid');
@@ -25,8 +39,75 @@ const searchToggle = document.getElementById('searchToggle');
 const imagePreview = document.getElementById('imagePreview');
 const toastContainer = document.getElementById('toastContainer');
 
-// ─── LocalStorage ───
-function loadItems() {
+// ─── Firestore: Real-time Listener ───
+function listenToItems() {
+    itemsCollection.orderBy('createdAt', 'desc').onSnapshot(
+        (snapshot) => {
+            items = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            isLoading = false;
+            renderCards();
+        },
+        (error) => {
+            console.error('Firestore dinleme hatası:', error);
+            isLoading = false;
+            showToast('Veri yüklenirken hata oluştu!', 'error');
+            // Fallback: try loading from localStorage
+            loadFromLocalStorage();
+            renderCards();
+        }
+    );
+}
+
+// ─── Firestore: Add Item ───
+async function addItemToFirestore(itemData) {
+    try {
+        await itemsCollection.add(itemData);
+        // Also save to localStorage as backup
+        backupToLocalStorage();
+        showToast('İçerik eklendi!', 'success');
+    } catch (error) {
+        console.error('Ekleme hatası:', error);
+        showToast('Eklenirken hata oluştu!', 'error');
+    }
+}
+
+// ─── Firestore: Update Item ───
+async function updateItemInFirestore(id, itemData) {
+    try {
+        await itemsCollection.doc(id).update(itemData);
+        backupToLocalStorage();
+        showToast('İçerik güncellendi!', 'success');
+    } catch (error) {
+        console.error('Güncelleme hatası:', error);
+        showToast('Güncellenirken hata oluştu!', 'error');
+    }
+}
+
+// ─── Firestore: Delete Item ───
+async function deleteItemFromFirestore(id) {
+    try {
+        await itemsCollection.doc(id).delete();
+        backupToLocalStorage();
+        showToast('İçerik silindi', 'info');
+    } catch (error) {
+        console.error('Silme hatası:', error);
+        showToast('Silinirken hata oluştu!', 'error');
+    }
+}
+
+// ─── LocalStorage Backup (fallback) ───
+const STORAGE_KEY = 'izleme-listem-data';
+
+function backupToLocalStorage() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch (e) { /* ignore */ }
+}
+
+function loadFromLocalStorage() {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
         items = data ? JSON.parse(data) : [];
@@ -35,11 +116,40 @@ function loadItems() {
     }
 }
 
-function saveItems() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+// ─── Migrate existing localStorage data to Firestore ───
+async function migrateLocalStorageToFirestore() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) return;
+
+        const localItems = JSON.parse(data);
+        if (!localItems || localItems.length === 0) return;
+
+        // Check if Firestore already has data
+        const snapshot = await itemsCollection.limit(1).get();
+        if (!snapshot.empty) return; // Firestore already has data, skip migration
+
+        // Migrate each item
+        const batch = db.batch();
+        localItems.forEach(item => {
+            const docRef = itemsCollection.doc();
+            const { id, ...itemData } = item; // Remove old local ID
+            batch.set(docRef, {
+                ...itemData,
+                createdAt: itemData.createdAt || Date.now(),
+                migratedFrom: 'localStorage'
+            });
+        });
+
+        await batch.commit();
+        showToast(`${localItems.length} içerik bulutla senkronize edildi! ☁️`, 'success');
+        console.log(`${localItems.length} item migrated from localStorage to Firestore`);
+    } catch (error) {
+        console.error('Migration hatası:', error);
+    }
 }
 
-// ─── Unique ID ───
+// ─── Unique ID (not needed for Firestore, but kept for compatibility) ───
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
@@ -77,6 +187,18 @@ const categoryLabels = {
 
 // ─── Render Cards ───
 function renderCards() {
+    // Show loading state
+    if (isLoading) {
+        cardsGrid.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Yükleniyor...</p>
+            </div>
+        `;
+        emptyState.style.display = 'none';
+        return;
+    }
+
     const filtered = items.filter(item => {
         const matchCategory = activeCategory === 'all' || item.category === activeCategory;
         const matchStatus = activeStatus === 'all' || item.status === activeStatus;
@@ -192,8 +314,8 @@ function hideImagePreview() {
     imagePreview.classList.remove('show');
 }
 
-// ─── Form Submit (Add / Edit) ───
-function handleFormSubmit(e) {
+// ─── Form Submit (Add / Edit) — Now uses Firestore ───
+async function handleFormSubmit(e) {
     e.preventDefault();
 
     const title = document.getElementById('inputTitle').value.trim();
@@ -208,19 +330,19 @@ function handleFormSubmit(e) {
         return;
     }
 
+    // Disable save button while processing
+    const btnSave = document.getElementById('btnSave');
+    btnSave.disabled = true;
+    btnSaveText.textContent = 'Kaydediliyor...';
+
     const editId = editIdField.value;
 
     if (editId) {
         // ─── Edit Mode ───
-        const index = items.findIndex(i => i.id === editId);
-        if (index !== -1) {
-            items[index] = { ...items[index], title, desc, image, url, category, status };
-            showToast('İçerik güncellendi!', 'success');
-        }
+        await updateItemInFirestore(editId, { title, desc, image, url, category, status });
     } else {
         // ─── Add Mode ───
         const newItem = {
-            id: generateId(),
             title,
             desc,
             image,
@@ -229,12 +351,11 @@ function handleFormSubmit(e) {
             status,
             createdAt: Date.now()
         };
-        items.unshift(newItem);
-        showToast('İçerik eklendi!', 'success');
+        await addItemToFirestore(newItem);
     }
 
-    saveItems();
-    renderCards();
+    btnSave.disabled = false;
+    btnSaveText.textContent = 'Kaydet';
     closeModal();
 }
 
@@ -245,13 +366,10 @@ function confirmDelete(id) {
     document.body.style.overflow = 'hidden';
 }
 
-function executeDelete() {
+async function executeDelete() {
     if (!deleteTargetId) return;
-    items = items.filter(i => i.id !== deleteTargetId);
-    saveItems();
-    renderCards();
+    await deleteItemFromFirestore(deleteTargetId);
     closeDeleteModal();
-    showToast('İçerik silindi', 'info');
 }
 
 // ─── Card Click Handler ───
@@ -330,7 +448,11 @@ function handleImageInput(e) {
 
 // ─── Event Listeners ───
 function init() {
-    loadItems();
+    // Start listening to Firestore (real-time sync)
+    listenToItems();
+
+    // Migrate any existing localStorage data to Firestore
+    migrateLocalStorageToFirestore();
 
     // Header
     document.getElementById('btnAdd').addEventListener('click', openAddModal);
@@ -373,9 +495,6 @@ function init() {
             }
         }
     });
-
-    // Initial Render
-    renderCards();
 }
 
 // ─── Start ───
