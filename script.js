@@ -511,6 +511,47 @@ function init() {
                 toggleSearch();
             }
         }
+
+        // ─── Scroll FAB ───
+const scrollFab = document.getElementById('scrollFab');
+const scrollFabIcon = document.getElementById('scrollFabIcon');
+let fabDirection = 'down';
+
+function updateFab() {
+    const scrollY = window.scrollY;
+    const maxScroll = document.body.scrollHeight - window.innerHeight;
+    const atBottom = scrollY >= maxScroll - 60;
+
+    if (scrollY > 120) {
+        scrollFab.classList.add('visible');
+    } else {
+        scrollFab.classList.remove('visible');
+    }
+
+    if (atBottom) {
+        fabDirection = 'up';
+        scrollFabIcon.innerHTML = '<polyline points="18 15 12 9 6 15"/>';
+    } else {
+        fabDirection = 'down';
+        scrollFabIcon.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+    }
+}
+
+scrollFab.addEventListener('click', () => {
+    if (fabDirection === 'down') {
+        // Aktif kategoriye göre son kartı bul
+        const visibleCards = cardsGrid.querySelectorAll('.card');
+        if (visibleCards.length > 0) {
+            visibleCards[visibleCards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    } else {
+        // En üste çık
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+});
+
+window.addEventListener('scroll', updateFab, { passive: true });
+updateFab();
     });
 }
 

@@ -1116,3 +1116,57 @@ body::before {
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 }
+
+/* ═══════════════════════════════════════════════════
+   SCROLL FAB BUTTON
+   ═══════════════════════════════════════════════════ */
+.scroll-fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 500;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 20, 30, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: rgba(255, 255, 255, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+    transition: all var(--transition-fast);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+}
+
+.scroll-fab.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.scroll-fab:hover {
+    background: rgba(230, 57, 70, 0.35);
+    border-color: rgba(230, 57, 70, 0.45);
+    color: #fff;
+    box-shadow: 0 6px 28px rgba(230, 57, 70, 0.3);
+    transform: translateY(-2px);
+}
+
+.scroll-fab-icon {
+    transition: transform var(--transition-fast);
+}
+
+@media (max-width: 768px) {
+    .scroll-fab {
+        bottom: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+    }
+}
