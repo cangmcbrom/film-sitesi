@@ -185,9 +185,26 @@ const categoryLabels = {
     anime: '⛩️ Anime'
 };
 
+// ─── Update Counts ───
+function updateCounts() {
+    // Üst tab sayaçları (tüm items üzerinden)
+    document.getElementById('count-all').textContent = items.length;
+    document.getElementById('count-film').textContent = items.filter(i => i.category === 'film').length;
+    document.getElementById('count-dizi').textContent = items.filter(i => i.category === 'dizi').length;
+    document.getElementById('count-anime').textContent = items.filter(i => i.category === 'anime').length;
+
+    // Alt status sayaçları (aktif kategoriye göre)
+    const base = activeCategory === 'all' ? items : items.filter(i => i.category === activeCategory);
+    document.getElementById('scount-all').textContent = base.length;
+    document.getElementById('scount-izlenecek').textContent = base.filter(i => i.status === 'izlenecek').length;
+    document.getElementById('scount-izleniyor').textContent = base.filter(i => i.status === 'izleniyor').length;
+    document.getElementById('scount-bitti').textContent = base.filter(i => i.status === 'bitti').length;
+}
+
 // ─── Render Cards ───
 function renderCards() {
     // Show loading state
+    updateCounts();
     if (isLoading) {
         cardsGrid.innerHTML = `
             <div class="loading-state">

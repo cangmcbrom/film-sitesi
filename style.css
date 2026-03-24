@@ -283,6 +283,50 @@ body::before {
     background: rgba(255, 255, 255, 0.04);
 }
 
+/* ─── Tab & Status Count Badges ─── */
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    line-height: 1;
+}
+
+.tab.active .tab-count {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+}
+
+.status-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+    line-height: 1;
+    margin-left: 2px;
+}
+
+.status-btn.active .status-count {
+    background: rgba(230, 57, 70, 0.25);
+    color: var(--accent);
+}
+
 .tab.active {
     background: var(--accent);
     color: #fff;

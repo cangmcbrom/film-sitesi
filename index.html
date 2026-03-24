@@ -38,25 +38,25 @@
         <!-- Category Tabs -->
         <nav class="tabs" id="tabs">
             <button class="tab active" data-category="all">
-                <span class="tab-icon">📋</span> Tümü
-            </button>
-            <button class="tab" data-category="film">
-                <span class="tab-icon">🎥</span> Film
-            </button>
-            <button class="tab" data-category="dizi">
-                <span class="tab-icon">📺</span> Dizi
-            </button>
-            <button class="tab" data-category="anime">
-                <span class="tab-icon">⛩️</span> Anime
-            </button>
+    <span class="tab-icon">📋</span> Tümü <span class="tab-count" id="count-all">0</span>
+</button>
+<button class="tab" data-category="film">
+    <span class="tab-icon">🎥</span> Film <span class="tab-count" id="count-film">0</span>
+</button>
+<button class="tab" data-category="dizi">
+    <span class="tab-icon">📺</span> Dizi <span class="tab-count" id="count-dizi">0</span>
+</button>
+<button class="tab" data-category="anime">
+    <span class="tab-icon">⛩️</span> Anime <span class="tab-count" id="count-anime">0</span>
+</button>
         </nav>
 
         <!-- Status Filters -->
         <div class="status-filters" id="statusFilters">
-            <button class="status-btn active" data-status="all">Hepsi</button>
-            <button class="status-btn" data-status="izlenecek">İzlenecek</button>
-            <button class="status-btn" data-status="izleniyor">İzleniyor</button>
-            <button class="status-btn" data-status="bitti">Bitti</button>
+            <button class="status-btn active" data-status="all">Hepsi <span class="status-count" id="scount-all">0</span></button>
+<button class="status-btn" data-status="izlenecek">İzlenecek <span class="status-count" id="scount-izlenecek">0</span></button>
+<button class="status-btn" data-status="izleniyor">İzleniyor <span class="status-count" id="scount-izleniyor">0</span></button>
+<button class="status-btn" data-status="bitti">Bitti <span class="status-count" id="scount-bitti">0</span></button>
         </div>
 
         <!-- Cards Grid -->
